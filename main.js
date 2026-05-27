@@ -789,9 +789,23 @@ function renderClients() {
   if (typeF)  list = list.filter(c => c.type === typeF);
   if (!list.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-ico">👥</div><h3>No clients found</h3><p>' + (search||typeF ? 'Try a different filter.' : 'Add your first client!') + '</p></div>'; return; }
   const typeColors = { Regular:'b-blue', VIP:'b-amber', Corporate:'b-purple', 'One-time':'b-gray' };
+  const sc = { Paid:'b-green', Unpaid:'b-red', Partial:'b-amber', Draft:'b-gray' };
   el.innerHTML = list.map(c => {
     const invs = DB.invoices.filter(i => i.custName === c.name || i.custMobile === c.mobile);
     const total = invs.reduce((a,b) => a+b.grandTotal, 0);
+    const balance = invs.reduce((a,b) => a + (b.balanceAmt || 0), 0);
+    // Determine overall payment status for this client
+    let payStatus = 'No Invoices';
+    let payBadge = 'b-gray';
+    if (invs.length > 0) {
+      const hasUnpaid  = invs.some(i => i.status === 'Unpaid');
+      const hasPartial = invs.some(i => i.status === 'Partial');
+      const allPaid    = invs.every(i => i.status === 'Paid');
+      if (allPaid)           { payStatus = 'All Paid';    payBadge = 'b-green'; }
+      else if (hasUnpaid && !hasPartial) { payStatus = 'Unpaid';  payBadge = 'b-red';   }
+      else if (hasPartial || (hasUnpaid && invs.some(i=>i.status==='Paid'))) { payStatus = 'Partial'; payBadge = 'b-amber'; }
+      else                   { payStatus = 'Pending';     payBadge = 'b-amber'; }
+    }
     return `<div class="client-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div class="client-name">${c.name}</div>
@@ -799,6 +813,11 @@ function renderClients() {
       </div>
       ${c.gstin?`<div class="client-gstin">GSTIN: ${c.gstin}</div>`:''}
       <div class="client-info">${c.addr}<br>📞 ${c.mobile}${c.email?'<br>✉ '+c.email:''}</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text2);">Payment:</span>
+        <span class="badge ${payBadge}">${payStatus}</span>
+        ${balance > 0 ? `<span style="font-size:11px;color:var(--red);font-weight:700;">Due: ₹${balance.toLocaleString('en-IN')}</span>` : ''}
+      </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
         <div><div style="font-size:11px;color:var(--text2);">Total</div><div style="font-size:14px;font-weight:700;">${invs.length} | ₹${total.toLocaleString('en-IN')}</div></div>
         <div style="display:flex;gap:5px;">
