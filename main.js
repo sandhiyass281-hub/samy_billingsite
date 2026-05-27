@@ -137,6 +137,8 @@ function selectClientFromDropdown(id) {
     document.getElementById('inv-custmobile').value = '';
     document.getElementById('inv-custgst').value = '';
     document.getElementById('inv-custaddr').value = '';
+    document.getElementById('inv-custstate').value = '';
+    document.getElementById('inv-custscode').value = '';
     return;
   }
   const c = DB.clients.find(x => x.id === id);
@@ -145,9 +147,23 @@ function selectClientFromDropdown(id) {
   document.getElementById('inv-custmobile').value = c.mobile || '';
   document.getElementById('inv-custgst').value = c.gstin || '';
   document.getElementById('inv-custaddr').value = c.addr || '';
+  document.getElementById('inv-custstate').value = c.state || '';
+  document.getElementById('inv-custscode').value = c.scode || '';
 }
 
-// ============ GST MODE ============
+// Auto-fill state/scode when customer name or mobile matches a DB client
+function autofillClientState() {
+  const name = document.getElementById('inv-custname').value.trim().toLowerCase();
+  const mobile = document.getElementById('inv-custmobile').value.trim();
+  const match = DB.clients.find(c =>
+    (mobile && c.mobile === mobile) ||
+    (name.length >= 3 && c.name.toLowerCase() === name)
+  );
+  if (match) {
+    document.getElementById('inv-custstate').value = match.state || '';
+    document.getElementById('inv-custscode').value = match.scode || '';
+  }
+}
 function setGSTMode(mode) {
   gstMode = mode;
   document.getElementById('gst-excl').classList.toggle('on', mode === 'exclusive');
@@ -176,7 +192,7 @@ function resetInvoice() {
   document.getElementById('sellerInfoBox').style.display = 'none';
   const clientSel = document.getElementById('inv-client-select');
   if (clientSel) clientSel.value = '';
-  ['inv-custname','inv-custmobile','inv-custgst','inv-custaddr','inv-vehicle','inv-driver','inv-notes','inv-paid'].forEach(id => document.getElementById(id).value = '');
+  ['inv-custname','inv-custmobile','inv-custgst','inv-custaddr','inv-custstate','inv-custscode','inv-vehicle','inv-driver','inv-notes','inv-paid'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('inv-status').value = 'Paid';
   document.getElementById('itemsBody').innerHTML = '';
   initInvoice();
@@ -389,6 +405,8 @@ function saveInvoice() {
     custName, custMobile,
     custGst: document.getElementById('inv-custgst').value.trim().toUpperCase(),
     custAddr: document.getElementById('inv-custaddr').value.trim(),
+    custState: document.getElementById('inv-custstate').value.trim(),
+    custScode: document.getElementById('inv-custscode').value.trim(),
     vehicleNo: document.getElementById('inv-vehicle').value.trim().toUpperCase(),
     driverName: document.getElementById('inv-driver').value.trim(),
     gstMode,
@@ -413,13 +431,20 @@ function saveInvoice() {
 // ============ PRINT INVOICE ============
 function buildInvoiceHTML(inv) {
   const seller = inv.sellerSnap || {};
+  // Fallback: if old invoice has no custState/custScode, lookup from DB by mobile or name
+  let _custState = inv.custState || '';
+  let _custScode = inv.custScode || '';
+  if (!_custState || !_custScode) {
+    const _mc = DB.clients.find(c => c.mobile === inv.custMobile || c.name === inv.custName);
+    if (_mc) { _custState = _custState || _mc.state || ''; _custScode = _custScode || _mc.scode || ''; }
+  }
   const client = {
     name: inv.custName || '',
     gstin: inv.custGst || '',
     addr: inv.custAddr || '',
     mobile: inv.custMobile || '',
-    state: '',
-    scode: ''
+    state: _custState,
+    scode: _custScode
   };
   const rows = inv.items.map((it, i) => `
     <tr>
@@ -603,6 +628,8 @@ function printInvoice() {
     custName, custMobile:document.getElementById('inv-custmobile').value,
     custGst:document.getElementById('inv-custgst').value.toUpperCase(),
     custAddr:document.getElementById('inv-custaddr').value,
+    custState:document.getElementById('inv-custstate').value,
+    custScode:document.getElementById('inv-custscode').value,
     vehicleNo:document.getElementById('inv-vehicle').value.toUpperCase(),
     driverName:document.getElementById('inv-driver').value,
     gstMode, payMethod:document.getElementById('inv-pay').value,
@@ -1690,6 +1717,7 @@ function injectSampleData() {
       id: uid(), invoiceNo: 'INV-' + String(no).padStart(3,'0'),
       date: addDays(dateOff), sellerId: cid1, sellerSnap: sellerSnap1,
       custName, custMobile, custGst, custAddr,
+      custState: 'Tamil Nadu', custScode: '33',
       vehicleNo, driverName, gstMode: 'exclusive',
       payMethod: 'Bank Transfer', status,
       notes: 'Thank you for your business!',
