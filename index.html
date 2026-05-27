@@ -151,13 +151,15 @@
         <div class="g3">
           <div class="form-row">
             <label class="form-lbl">Customer Name *</label>
-            <input class="form-ctrl" id="inv-custname" placeholder="Type name or mobile…" autocomplete="off">
+            <input class="form-ctrl" id="inv-custname" placeholder="Type name or mobile…" autocomplete="off" oninput="autofillClientState()">
           </div>
-          <div class="form-row"><label class="form-lbl">Mobile *</label><input class="form-ctrl" id="inv-custmobile" placeholder="98765 43210" maxlength="15"></div>
+          <div class="form-row"><label class="form-lbl">Mobile *</label><input class="form-ctrl" id="inv-custmobile" placeholder="98765 43210" maxlength="15" oninput="autofillClientState()"></div>
           <div class="form-row"><label class="form-lbl">Customer GSTIN</label><input class="form-ctrl" id="inv-custgst" placeholder="33AABCS1429B1ZB" maxlength="20" style="text-transform:uppercase;"></div>
         </div>
         <div style="margin-top:12px;">
           <div class="form-row"><label class="form-lbl">Customer Address</label><textarea class="form-ctrl" id="inv-custaddr" rows="2" placeholder="Street, City, State, PIN"></textarea></div>
+          <input type="hidden" id="inv-custstate">
+          <input type="hidden" id="inv-custscode">
         </div>
       </div>
       <div class="card" style="margin-bottom:14px;">
