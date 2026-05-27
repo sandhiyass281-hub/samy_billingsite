@@ -71,8 +71,16 @@ function nav(page, btn) {
   closeSidebar();
 }
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  const bd = document.getElementById('sidebarBackdrop');
+  if (bd) bd.classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  const bd = document.getElementById('sidebarBackdrop');
+  if (bd) bd.classList.remove('open');
+}
 function checkMobile() {
   const btn = document.getElementById('menuBtn');
   if (window.innerWidth <= 768) { btn.style.display = 'flex'; } else { btn.style.display = 'none'; closeSidebar(); }
